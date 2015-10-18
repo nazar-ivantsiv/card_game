@@ -15,7 +15,7 @@ SCORES = {'9':0,
 		  }
 
 min_bet = 100
-last_bet = [0, min_bet] #[comp, user]
+last_bet = {'user':min_bet, 'comp':0}
 
 deck = [(c,s) for s in SUITS for c in CARDS]  #create DECK
 shuffle(deck)	#shuffle DECK
@@ -25,7 +25,7 @@ user_deck = [deck.pop() for i in range(10)]
 stock = [[deck.pop() for i in range(2)], [deck.pop() for i in range(2)]]
 
 
-def count_score(user_cards, bias=0 , marriages=0):					#use bias to get ESTIMATE SCORE
+def count_score(user_cards, minus=0 , marriages=0):					#substract minus to get ESTIMATE SCORE
 	cards_count = {k:0 for k in SCORES.keys()}		#initialize keys
 
 	if marriages:
@@ -37,34 +37,43 @@ def count_score(user_cards, bias=0 , marriages=0):					#use bias to get ESTIMATE
 		cards_count[c] += 1	#...if the card is in user_cards
 
 	score = sum([(cards_count.get(k,0) * v) for k,v in SCORES.items()])	#sum(qty * score)
-	return score - bias
+	return score - minus
 
 def print_cards(cards):
 	for num,item in enumerate(cards):
 		print('{}: {}'.format(num,item))
 
 def print_bet(bet):
-	print('COMP: {}'.format(bet[0]))
-	print('YOU: {}'.format(bet[1]))
+	print('COMP: {}'.format(bet['comp']))
+	print('YOU: {}'.format(bet['user']))
 
-def bidding(last_bet, comp_score):
+def bidding(last_bet, comp_estimate):
+	increment = 10
 	#Initialize
-	if last_bet[1] > 0:
-		bet = [min_bet, 0]
+	if last_bet['user'] > 0:
+		bet = {'user':0, 'comp': min_bet}
 	else: 
-		bet = [0, min_bet]
+		bet = {'user':0, 'comp': min_bet}
 
-	#Comps bet
-	if (comp_score > bet[0]):
-			bet = [(comp_score / 10)*10, 0]
+	comp_max_bet = (comp_estimate / 10)*10
 
 	print_bet(bet)
 
-	#Users bet
-	user_input = int(raw_input('>>'))
+	while True:
+		print_bet(bet)
+		if bet['comp'] >= bet['user']:
+			user_input = int(raw_input('BET (\'0\'to PASS):'))
 
-	if user_input > bet[0]:
-		bet = [0, user_input]
+			if user_input == 0:
+				break
+			elif user_input < bet['comp']:
+				continue
+			else:
+				bet['user'] = user_input
+		elif bet['comp'] < comp_max_bet:
+			bet['comp'] += 10
+		else:
+			break
 
 	return bet
 
@@ -96,12 +105,14 @@ def get_max_card(deck, suit=0):
 	else:
 		suit_deck = deck
 
-	max_card = ['','']
-	for item in suit_deck:
-		if SCORES[max_card[0]] < SCORES[item[0]]:
-			max_card = item
-
-	return max_card
+	if suit_deck != []:
+		max_card = suit_deck[0]
+		for item in suit_deck:
+			if SCORES[max_card[0]] < SCORES[item[0]]:
+				max_card = item
+		return max_card
+	else:
+		return 0
 
 def get_min_card(deck, suit=0):
 	if suit != 0:
@@ -109,25 +120,27 @@ def get_min_card(deck, suit=0):
 	else:
 		suit_deck = deck
 
-	min_card = ['','']
-	for item in suit_deck:
-		if SCORES[min_card[0]] > SCORES[item[0]]:
-			min_card = item
-
-	return min_card
+	if suit_deck != []:
+		min_card = suit_deck[0]
+		for item in suit_deck:
+			if SCORES[min_card[0]] > SCORES[item[0]]:
+				min_card = item
+		return min_card
+	else:
+		return 0
 
 def comp_turn(comp_deck, trump_suit, user_card=0):
 	if (user_card > 0):												#If on USERS turn
 		if trump_suit > 0:											#Check for the MAX TRUMP
 			comp_card = get_max_card(comp_deck, trump_suit)
-			if comp_card == ['','']:										#No trumps in deck
+			if comp_card == 0:										#No trumps in deck
 				comp_card = get_min_card(comp_deck, user_card[1])	#Get MIN card matching user_suit
 		else:
 			comp_card = get_max_card(comp_deck, user_suit[1])		#Get MAX if no marriages were made
 	else:															#If On COMPS turn
 		if trump_suit > 0:											#Check for the MAX TRUMP
 			comp_card = get_max_card(comp_deck, trump_suit)
-			if comp_card == ['','']:										#No trumps in deck
+			if comp_card == 0:										#No trumps in deck
 				comp_card = get_max_card(comp_deck)					#Get MAX card
 		else:
 			comp_card = get_max_card(comp_deck)						#Get MAX card
@@ -153,8 +166,8 @@ def sort_by_suit(deck):
 ### BIDDING ###
 print_cards(user_deck)
 
-bias = 20
-comp_score = count_score(comp_deck, bias, 1)
+minus = 20
+comp_score = count_score(comp_deck, minus, 1)
 
 last_bet = bidding(last_bet, comp_score)
 print('Last bet: %s' % last_bet)
@@ -167,30 +180,32 @@ user_deck.sort()
 #####################
 
 ### DEALING CARDS ###
-if last_bet[0]:
-	comp_deck.extend(stock[randint(0,1)])	#Add stock to comp_deck
-	comp_deck.pop()
-	comp_deck.pop()						#Put two cards to remaining stock
-
-else:
+if last_bet['user']:
 	stock_idx = int(raw_input('Choose your stock (0,1): '))
 	user_deck.extend(stock[stock_idx])
 
 	print_cards(user_deck)
 	card_1 = int(raw_input('First card to pass (0-11): '))
 	card_2 = int(raw_input('Second card to pass (0-11): '))
-
 	user_deck.pop(card_1)
 	user_deck.pop(card_2-1)
+else:
+	comp_deck.extend(stock[randint(0,1)])	#Add stock to comp_deck
+	comp_deck.pop()
+	comp_deck.pop()						#Put two cards to remaining stock
+
 #####################
 
 ### GAMEPLAY ###
-if last_bet[1] > 0:	#First is users turn
+if last_bet['user'] > 0:	#First is users turn
 	turn = 1
 else:
 	turn = 0	#First is comps turn
 
 trump_suit = ''  #['spades', 'clubs', 'diamonds', 'hearts']
+
+user_trick = 
+comp_trick = 
 score = {'user':0, 'comp':0}
 
 while (user_deck != list()):
@@ -208,9 +223,9 @@ while (user_deck != list()):
 				score['user'] += SCORES[trump_suit+' marriage']
 
 
-		win, scr = compare_cards(user_card, comp_card, trump_suit)
+		win, scr = compare_cards(comp_card, user_card, trump_suit)
 
-		print(win, scr)
+		print('Wins: '.format(win, scr))
 
 		if win:
 			score['user'] += scr
@@ -235,7 +250,7 @@ while (user_deck != list()):
 				score['comp'] += SCORES[trump_suit+' marriage']
 
 
-		win, scr = compare_cards(user_card, comp_card, trump_suit)
+		win, scr = compare_cards(comp_card, user_card, trump_suit)
 
 		print(win, scr)
 
