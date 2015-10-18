@@ -1,0 +1,109 @@
+def mult(num1, num2 = 2):
+...     print(num1*num2)
+... 
+>>> mult(2)
+4
+>>> bar = 'bar'
+>>> def hello(str1, str2 = bar):
+...     print(str1+str2)
+... 
+>>> hello('wer')
+werbar
+>>> def func(*args):
+...     fir item in args:
+  File "<stdin>", line 2
+    fir item in args:
+           ^
+SyntaxError: invalid syntax
+>>> def func(*args):
+...     for item in args:
+...             print(item)
+... 
+>>> func(*[1,2,3])
+1
+2
+3
+>>> def func(**kwargs):
+...     print(kwargs.keys())
+... 
+>>> dct  =dict('arg1'=1)
+  File "<stdin>", line 1
+SyntaxError: keyword can't be an expression
+>>> dct  = dict('arg1':1)
+  File "<stdin>", line 1
+    dct  = dict('arg1':1)
+                      ^
+SyntaxError: invalid syntax
+>>> dct  = {'arg1':1}
+>>> func(dct)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: func() takes exactly 0 arguments (1 given)
+>>> func(**dct)
+['arg1']
+>>> 
+>>> 
+>>> 
+>>> 
+>>> 
+>>> 
+>>> 
+>>> 
+>>> defpow(num):
+  File "<stdin>", line 1
+    defpow(num):
+               ^
+SyntaxError: invalid syntax
+>>> def pow(num):
+...     print(num**2)
+... 
+>>> pow(2)
+4
+>>> def pow():
+... 
+  File "<stdin>", line 2
+    
+    ^
+IndentationError: expected an indented block
+>>> def pow():
+... 
+  File "<stdin>", line 2
+    
+    ^
+IndentationError: expected an indented block
+>>> def pow(num):
+...     return num**2
+... 
+>>> pow(2)
+4
+>>> a = pow(4)
+>>> a
+
+mult = lambda x,y: x*y
+>>> mult(2)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+TypeError: <lambda>() takes exactly 2 arguments (1 given)
+>>> mult(2,3)
+
+def func(item):
+...     return ite % 2 == 0
+... 
+>>> func(2)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 2, in func
+NameError: global name 'ite' is not defined
+>>> def func(item):
+...     return item % 2 == 0
+... 
+>>> lst = [1,2,3,4,5,6,7,8]
+>>> filter(func,lst)
+[2, 4, 6, 8]
+
+filter(lambda x: x % 2 == 0, lst)
+
+
+
+
+
