@@ -1,1 +1,1 @@
-# card_game
+# card game 'A Thousand'
