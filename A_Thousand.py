@@ -67,8 +67,8 @@ def bidding(last_bet, comp_estimate):
 				continue
 			else:
 				bet['user'] = user_input		 	# Remember Users bet (round to 10)
-		elif (bet['user'] + 10) <= comp_max_bet:	# If Comp can give +10 more than user - GO
-			bet['comp'] = bet['user'] + 10			# Comp bids +10
+		elif (bet['user'] + increment) <= comp_max_bet:	# If Comp can give +10 more than user - GO
+			bet['comp'] = bet['user'] + increment			# Comp bids +10
 		else:
 			bet['comp'] = 0							# Comp PASS
 			break
