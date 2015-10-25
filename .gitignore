@@ -6,7 +6,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-func_factorial.py
+func_factory.py
 .git
 .Python
 bin/
