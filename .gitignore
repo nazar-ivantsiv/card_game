@@ -1,4 +1,4 @@
-# Byte-compiled / optimized / DLL files
+\# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 
@@ -6,7 +6,6 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-func_factory.py
 .git
 .Python
 bin/
