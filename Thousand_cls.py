@@ -42,7 +42,6 @@ class Deck(list):
 		else:
 			pass	# Leave Deck an empty list
 
-
 	def shuffle_deck(self):
 		'''
 		Just shuffles the cards
@@ -55,20 +54,20 @@ class Deck(list):
 		'''
 		return [self.pop() for i in range(qty)]
 
-	def count_score(self, minus=0 , check_for_marriages=0):
+	def count_score(self, check_for_marriages=0):
 		'''
 		Calculates the SCORE of all the cards in curr. DECK, including registered
 		marriages
 
-		minus - vlue to subdtrsct from resulting score (say to calc the ESTIMATE)
-		check_for_marriages - if TRUE - also adds the score of unregistered marriages
-								(also used when calculating ESTIMATE)
+		check_for_marriages - if TRUE(1) - also adds the score of unregistered marriages
+							that has an Ace to protect them
+							(used when calculating ESTIMATE)
 		'''
 		cards_count = {k:0 for k in SCORES.keys()}		#initialize keys
 
 		if check_for_marriages:
-			for c,s in self:							#check for marriages
-				if (c == 'K')and(('Q',s) in self):
+			for c,s in self:
+				if (c == 'K') and (('Q',s) in self) and (('A',s) in self):
 					cards_count[s+' marriage'] = 1
 
 		for c,s in self:
@@ -78,7 +77,7 @@ class Deck(list):
 			cards_count[c] += 1	#...if the card is in user_cards
 
 		score = sum([(cards_count.get(k,0) * v) for k,v in SCORES.items()])	#sum(qty * score)
-		return score + self.marriage_score - minus
+		return score + self.marriage_score
 
 	def print_cards(self):
 		if Deck.TRUMP_SUIT != 0:
@@ -148,6 +147,9 @@ class Deck(list):
 			return 0			# If there are no cards of current suit
 
 	def make_turn(self, current_turn, user_card=0):
+		'''
+		Makes a turn of current instance (user or comp)
+		'''
 		if self.name == 'user':
 			self.print_cards()
 
@@ -199,10 +201,19 @@ class Deck(list):
 ################################################################################
 
 def print_bet(bet):
-	print('COMP: {}'.format(bet['comp']))
-	print('YOU: {}'.format(bet['user']))
+	print(	'\n'
+			'COMP: {}\n'
+			'YOU: {}\n'.format(bet['comp'], bet['user'])
+			)
 
 def bidding(last_bet, comp_estimate):
+	'''
+	Bidding for max stake.
+
+	last_bet - Dict that stores values of the bet from previous game
+				 (ex. {'user':140, 'comp':0})
+	comp_estimate - Estimate max score that COMP can handle.
+	'''
 	increment = 10
 	#Initialize
 	if last_bet['user'] > 0:
@@ -211,8 +222,8 @@ def bidding(last_bet, comp_estimate):
 		bet = {'user': MIN_BET, 'comp': 0}
 
 	comp_max_bet = (comp_estimate / 10)*10
-	if comp_max_bet < MIN_BET: comp_max_bet = MIN_BET 
-	#print(comp_max_bet)
+	if comp_max_bet < MIN_BET: 
+		comp_max_bet = MIN_BET 
 
 	while True:
 		print_bet(bet)
@@ -239,7 +250,12 @@ def bidding(last_bet, comp_estimate):
 	return bet
 
 def compare_cards(card1, card2, turn):
+	'''
+	Compares two cards by score. If their SUIT is different - returns the one, whos turn was first.
 
+	card1, card2 - cards (tuples)
+	turn -  0 - comps turn; 1 - users turn 
+	'''
 	card1_score = SCORES[card1[0]]
 	card2_score = SCORES[card2[0]]
 			
@@ -267,25 +283,28 @@ global_score = {'user':0, 'comp':0}
 while True:
 
 	### DEALING CARDS ###
-	deck = Deck('main',0,1)
-	deck.shuffle_deck()
-	#	Init comp & user DECKS (cards)
-	comp_deck = Deck('comp')
-	user_deck = Deck('user')
+	while True:		# Repeat until there are less then 4 nineth in every deck
+		deck = Deck('main',0,1)
+		deck.shuffle_deck()
 
-	comp_deck.extend(deck.give_cards(10))
-	user_deck.extend(deck.give_cards(10))
+		# Init comp & user DECKS (cards)
+		comp_deck = Deck('comp', deck.give_cards(10))
+		user_deck = Deck('user', deck.give_cards(10))
+
+		# Count '9' in the decks	
+		count_nineth = lambda x: x[0] == '9'
+		if (sum(map( count_nineth, comp_deck )) < 4) and \
+			(sum(map( count_nineth, user_deck )) < 4):
+			break
 
 	#	Init two stocks to choose from
 	stock = deck.give_cards(2), deck.give_cards(2)
 
-	print('\n')
-	print('Your cards:')
+	print('\nYour cards:')
 	user_deck.sort_by_suit()
 	user_deck.print_cards()
 
-	minus = 20
-	comp_score = comp_deck.count_score(minus, 1)	# comp estimate SCORE
+	comp_score = int(comp_deck.count_score(1) * 1.3)	# comp estimate SCORE
 
 	last_bet = bidding(last_bet, comp_score)
 	print('Last bet: %s' % last_bet)
@@ -308,10 +327,15 @@ while True:
 		#	Sort by suit for better appearance
 		user_deck.sort()
 		user_deck.sort_by_suit()
-
 		user_deck.print_cards()
+
+
 		while True:
 			try:
+				change_bet = int(raw_input('Increase BET or leave as is(0) : '))
+				if change_bet > last_bet['user']:
+					last_bet['user'] = change_bet
+
 				card_1 = int(raw_input('First card to pass (0-11): '))
 				card_2 = int(raw_input('Second card to pass (0-11): '))
 				break
@@ -375,6 +399,7 @@ while True:
 		comp_deck.remove(comp_card)
 
 	else:
+		# Init TRUMP_SUIT for the next game
 		Deck.TRUMP_SUIT = 0
 
 		# Calculate scores
@@ -396,12 +421,12 @@ while True:
 				comp_score = last_bet['comp']	# Comp has reached the BET (give him the BET score)
 
 
-		print('####################\n')
+		print('-' * 30)
 		print('USER: {}'.format(user_score))
 		print('COMP: {}'.format(comp_score))
-		print('\n####################')
-		raw_input('Press ENTER to go to the next game...')
-		print('NEXT GAME:')
+		print('-' * 30)
+		raw_input('\nPress ENTER to proceed...')
+		print('\n\n\nNEXT GAME:')
 	################
 
 	global_score['user'] += user_score
@@ -410,18 +435,19 @@ while True:
 	print('GLOBAL SCORE: User: {} | Comp: {}'.format(global_score['user'],global_score['comp']))
 
 	if global_score['user'] >= WINNING_SCORE:
-		if global_score['comp'] != WINNING_SCORE:
-			print('*** YOU WIN! ***')
-		else:
+		if global_score['comp'] == global_score['user']:
 			print('*** DRAW ***')
+		else:
+			print('*** YOU WIN! ***')
 		break
 	elif global_score['comp'] >= WINNING_SCORE:
 		print('*** COMP WIN! ***')
+		break
 
 '''
 TODO:
-- Add possibility to recalculate bid after getting STOCK (user & comp)
-- Check if user uses a correct card
-- lower comp_max_score if there are no Aces (only marriages)
-- Check for 4 x'9' in the deck and shuffle again
+- DONE. Add possibility to recalculate bid after getting STOCK (user & comp)
+- Check if user uses a correct card (suit)
+- DONE. lower comp_max_score if there are no Aces (only marriages)
+- DONE. Check for 4 x'9' in the deck and shuffle again
 '''
