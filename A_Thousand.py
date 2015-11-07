@@ -1,4 +1,3 @@
-'''
 from random import shuffle, randint
 
 CARDS = {'9','J','Q','K','10','A'}
@@ -14,10 +13,10 @@ SCORES = {'9':0,
 		  'diamonds marriage':80,
 		  'hearts marriage':100,
 		  }
-'''
+
 MIN_BET = 100
 WINNING_SCORE = 1000
-'''
+
 def count_score(user_cards, minus=0 , marriages=0):					#substract minus to get ESTIMATE SCORE
 	cards_count = {k:0 for k in SCORES.keys()}		#initialize keys
 
@@ -35,7 +34,7 @@ def count_score(user_cards, minus=0 , marriages=0):					#substract minus to get 
 def print_cards(cards):
 	for num,item in enumerate(cards):
 		print('{}: {}'.format(num,item))
-'''
+
 def print_bet(bet):
 	print('COMP: {}'.format(bet['comp']))
 	print('YOU: {}'.format(bet['user']))
@@ -76,7 +75,7 @@ def bidding(last_bet, comp_estimate):
 
 	return bet
 
-'''
+
 def compare_cards(card1, card2, trump_suit, turn):
 	card1_score = count_score({card1})
 	card2_score = count_score({card2})
@@ -171,7 +170,7 @@ def sort_by_suit(deck):
 
 last_bet = {'user':MIN_BET, 'comp':0}
 global_score = {'user':0, 'comp':0}
-'''
+
 while True:
 
 	### DEALING CARDS ###
