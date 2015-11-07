@@ -27,7 +27,7 @@ class Deck(list):
 	def __init__(self, player_name, cards=0, is_main_deck=0):
 		'''
 		player_name - the NAME
-		cards - CARDS to put into current instance of Deck
+		cards - CARDS to put into current instance of Deck (if req.)
 		is_main_deck - if created instance of class is the MAIN deck
 		'''
 		self.name = player_name
@@ -44,12 +44,26 @@ class Deck(list):
 
 
 	def shuffle_deck(self):
+		'''
+		Just shuffles the cards
+		'''
 		shuffle(self)
 
 	def give_cards(self, qty=10):
+		'''
+		Takes specified QTY of cards from the DECK
+		'''
 		return [self.pop() for i in range(qty)]
 
-	def count_score(self, minus=0 , check_for_marriages=0):		#substract minus to get ESTIMATE SCORE to bit
+	def count_score(self, minus=0 , check_for_marriages=0):
+		'''
+		Calculates the SCORE of all the cards in curr. DECK, including registered
+		marriages
+
+		minus - vlue to subdtrsct from resulting score (say to calc the ESTIMATE)
+		check_for_marriages - if TRUE - also adds the score of unregistered marriages
+								(also used when calculating ESTIMATE)
+		'''
 		cards_count = {k:0 for k in SCORES.keys()}		#initialize keys
 
 		if check_for_marriages:
@@ -74,12 +88,20 @@ class Deck(list):
 			print('{}: {}'.format(num,item))
 
 	def sort_by_suit(self):
+		'''
+		Sorts our CARDS by suit. get_key sets the suits as a sort KEY
+		'''
 		def get_key(item):	# Sort by SECOND key of item
 			return item[1]
 		self.sort(key=get_key)
 
 	def has_marriage(self, card):
-		#Therer is marriage with current card
+		'''
+		Checks for marriages with current card in DECK and adds its SCORE to 
+		local marriage_score
+
+		card - a card to search a pair for ('K' or 'Q')
+		'''
 		if ((card[0] == 'K') and ( ('Q', card[1]) in self)) \
 			or( (card[0] == 'Q') and ( ('K', card[1]) in self)):
 			if (self.TRUMP_SUIT != card[1]):
@@ -88,36 +110,44 @@ class Deck(list):
 				self.marriage_score += SCORES[self.TRUMP_SUIT+' marriage']
 
 	def get_min_card(self, suit=0):
+		'''
+		Finds the CHEAPEST card in a DECK
+
+		suit - if we require to maitain a SUIT (optional)
+		'''
+		def get_key(item):
+			return SCORES[item[0]]
+
 		if suit != 0:
 			suit_deck = [i for i in self if i[1] == suit]
 		else:
 			suit_deck = self
 
 		if suit_deck != []:
-			min_card = suit_deck[0]
-			for item in suit_deck:
-				if SCORES[min_card[0]] > SCORES[item[0]]:
-					min_card = item
-			return min_card
+			return sorted(suit_deck, key=get_key)[0]  # MIN card
 		else:
 			return self.get_min_card()
 
 	def get_max_card(self, suit=0):
+		'''
+		Finds the BIGGEST card in a DECK
+
+		suit - if we require to maintain a SUIT or have a TRUMP_SUIT (optional)
+		'''
+		def get_key(item):
+			return SCORES[item[0]]
+
 		if suit != 0:
 			suit_deck = [i for i in self if i[1] == suit]
 		else:
 			suit_deck = self
 
 		if suit_deck != []:
-			max_card = suit_deck[0]
-			for item in suit_deck:
-				if SCORES[max_card[0]] < SCORES[item[0]]:
-					max_card = item
-			return max_card
+			return sorted(suit_deck, key=get_key, reverse=True)[0]  # MAX card
 		else:
-			return self.get_min_card()			# If there are no cards of current suit
+			return 0			# If there are no cards of current suit
 
-	def make_turn(self, user_card=0):
+	def make_turn(self, current_turn, user_card=0):
 		if self.name == 'user':
 			self.print_cards()
 
@@ -136,20 +166,32 @@ class Deck(list):
 			return card
 
 		elif self.name == 'comp':
-			if (user_card > 0):											#If on USERS turn
-				if self.TRUMP_SUIT != 0:								#Check for the MAX TRUMP
+			### DEFENCE LOGIC ###
+			if current_turn:	
+				if user_card[1] == self.TRUMP_SUIT:						# user_card is a TRUMP
+					comp_card = self.get_max_card(self.TRUMP_SUIT)		# Check for the MAX TRUMP
+					if (comp_card == 0):								# No trumps in deck
+						comp_card = self.get_min_card()					# Get any MIN card
+					else:
+						comp_card = self.get_min_card(self.TRUMP_SUIT)	# or give the minimum TRUMP
+
+				else:													# user_card is NOT a TRUMP
+					comp_card = self.get_max_card(user_card[1])			# Get MAX card of suit
+					if (comp_card == 0) or \
+						(SCORES[comp_card[0]] < SCORES[user_card[0]]):	# No card of the same suit or 
+																		# user_card is GREATER 
+						if self.TRUMP_SUIT != 0:
+							comp_card = self.get_min_card(self.TRUMP_SUIT)		#Get MIN TRUMP
+						else:
+							comp_card = self.get_min_card(user_card[1])	# Give MIN to user if no marriages were made
+			### ATTACK LOGIC ###
+			else:														
+				if self.TRUMP_SUIT != 0:								# Check for the MAX TRUMP
 					comp_card = self.get_max_card(self.TRUMP_SUIT)
-					if comp_card == 0:									#No trumps in deck
-						comp_card = self.get_min_card(user_card[1])	#Get MIN card matching user_suit
+					if comp_card == 0:									# No trumps in deck
+						comp_card = self.get_max_card()					# Get MAX card
 				else:
-					comp_card = self.get_min_card(user_card[1])		#Give MIN to user if no marriages were made
-			else:														#If On COMPS turn
-				if self.TRUMP_SUIT != 0:								#Check for the MAX TRUMP
-					comp_card = self.get_max_card(self.TRUMP_SUIT)
-					if comp_card == 0:									#No trumps in deck
-						comp_card = self.get_max_card()					#Get MAX card
-				else:
-					comp_card = self.get_max_card()						#Get MAX card
+					comp_card = self.get_max_card()						# Get MAX card
 
 			print('COMP turn: {}\n'.format(comp_card))
 			return comp_card
@@ -299,9 +341,9 @@ while True:
 		print('-' * 30)
 
 		if turn:	#Users turn
-			user_card = user_deck.make_turn()
+			user_card = user_deck.make_turn(turn)
 
-			comp_card = comp_deck.make_turn(user_card)
+			comp_card = comp_deck.make_turn(turn, user_card)
 
 			win, scr = compare_cards(comp_card, user_card, turn)
 
@@ -314,9 +356,9 @@ while True:
 				turn = 0
 
 		else:		#Comps turn
-			comp_card = comp_deck.make_turn(user_card)
+			comp_card = comp_deck.make_turn(turn, user_card)
 
-			user_card = user_deck.make_turn()
+			user_card = user_deck.make_turn(turn)
 
 			win, scr = compare_cards(comp_card, user_card, turn)
 
