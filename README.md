@@ -1,1 +1,1 @@
-# card game A_Thousand.py
+# card game Thousand_cls.py
